@@ -18,7 +18,7 @@ use pocketmine\plugin\PluginBase;
 class PacketLogger extends PluginBase implements Listener{
 	public $isJoined = [];
 
-	public $enablePacketLogger = false;
+	public $enablePacketLogger = true;
 	public $enableBatchPacketLogger = false;
 
 	/*
@@ -58,7 +58,7 @@ class PacketLogger extends PluginBase implements Listener{
 			$dataPacket = clone $event->getPacket();
 			$dataPacket->decode();
 			foreach($dataPacket->getPackets() as $buf){
-				$pk = PacketPool::getPacketById(ord($buf{0}));
+				$pk = PacketPool::getPacketById(ord($buf[0]));
 				if(!$pk->canBeBatched()){
 					continue;
 				}
@@ -95,7 +95,7 @@ class PacketLogger extends PluginBase implements Listener{
 			$dataPacket = clone $event->getPacket();
 			$dataPacket->decode();
 			foreach($dataPacket->getPackets() as $buf){
-				$pk = PacketPool::getPacketById(ord($buf{0}));
+				$pk = PacketPool::getPacketById(ord($buf[0]));
 				if(!$pk->canBeBatched()){
 					continue;
 				}
@@ -107,7 +107,7 @@ class PacketLogger extends PluginBase implements Listener{
 					$name = str_replace("pocketmine\\network\\mcpe\\protocol\\", "", get_class($pk));
 					$this->getLogger()->info("?? ".$name);
 					if(isset($this->isJoined[$event->getPlayer()->getName()])){
-						$event->getPlayer()->sendMessage("?? ".$name);//"
+						$event->getPlayer()->sendMessage("?? ".$name);
 					}
 
 				}
