@@ -45,7 +45,7 @@ class PacketLogger extends PluginBase implements Listener{
 		if(!$this->enablePacketLogger){
 			return;
 		}
-		if(!$this->send){
+		if(!$this->receive){
 			return;
 		}
 		if(!$event->getPacket() instanceof BatchPacket&&!$event->getPacket() instanceof TextPacket&&!$event->getPacket() instanceof MovePlayerPacket&&!$event->getPacket() instanceof MoveActorAbsolutePacket&&!$event->getPacket() instanceof SetTimePacket){
@@ -85,7 +85,7 @@ class PacketLogger extends PluginBase implements Listener{
 		if(!$this->enablePacketLogger){
 			return;
 		}
-		if(!$this->receive){
+		if(!$this->send){
 			return;
 		}
 		if(!$event->getPacket() instanceof BatchPacket&&!$event->getPacket() instanceof TextPacket&&!$event->getPacket() instanceof MovePlayerPacket&&!$event->getPacket() instanceof MoveActorAbsolutePacket&&!$event->getPacket() instanceof SetTimePacket){
