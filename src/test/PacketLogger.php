@@ -2,24 +2,32 @@
 
 namespace test;
 
+use pocketmine\block\BlockBreakInfo;
+use pocketmine\block\BlockFactory;
+use pocketmine\block\BlockIdentifier;
+use pocketmine\block\BlockLegacyIds;
+use pocketmine\block\TNT;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerQuitEvent;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\event\server\DataPacketSendEvent;
+use pocketmine\item\ItemFactory;
 use pocketmine\network\mcpe\protocol\BatchPacket;
 use pocketmine\network\mcpe\protocol\MoveActorAbsolutePacket;
 use pocketmine\network\mcpe\protocol\MovePlayerPacket;
 use pocketmine\network\mcpe\protocol\PacketPool;
+use pocketmine\network\mcpe\protocol\PlayerAuthInputPacket;
 use pocketmine\network\mcpe\protocol\SetTimePacket;
 use pocketmine\network\mcpe\protocol\TextPacket;
 use pocketmine\plugin\PluginBase;
+use pocketmine\item\StringToItemParser;
+
 
 class PacketLogger extends PluginBase implements Listener{
 	public $isJoined = [];
 
 	public $enablePacketLogger = true;
-	public $enableBatchPacketLogger = false;
 
 	public $send = true;
 	public $receive = true;
@@ -29,7 +37,7 @@ class PacketLogger extends PluginBase implements Listener{
 	public $enableBatchPacketLogger = false;
 	 */
 
-	public function onEnable(){
+	public function onEnable(): void{
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 	}
 
@@ -48,35 +56,11 @@ class PacketLogger extends PluginBase implements Listener{
 		if(!$this->receive){
 			return;
 		}
-		if(!$event->getPacket() instanceof BatchPacket&&!$event->getPacket() instanceof TextPacket&&!$event->getPacket() instanceof MovePlayerPacket&&!$event->getPacket() instanceof MoveActorAbsolutePacket&&!$event->getPacket() instanceof SetTimePacket){
+		if(!$event->getPacket() instanceof TextPacket&&!$event->getPacket() instanceof MovePlayerPacket&&!$event->getPacket() instanceof MoveActorAbsolutePacket&&!$event->getPacket() instanceof SetTimePacket&&!$event->getPacket() instanceof PlayerAuthInputPacket){
 			$name = str_replace("pocketmine\\network\\mcpe\\protocol\\", "", get_class($event->getPacket()));
 			$this->getLogger()->info("!! ".$name);
-			if(isset($this->isJoined[$event->getPlayer()->getName()])){
-				$event->getPlayer()->sendMessage("!! ".$name);
-			}
-		}
-
-		if(!$this->enableBatchPacketLogger){
-			return;
-		}
-
-		if($event->getPacket() instanceof BatchPacket){
-			$dataPacket = clone $event->getPacket();
-			$dataPacket->decode();
-			foreach($dataPacket->getPackets() as $buf){
-				$pk = PacketPool::getPacketById(ord($buf[0]));
-				if(!$pk->canBeBatched()){
-					continue;
-				}
-				$pk->setBuffer($buf, 1);
-				//Now handle $pk like a normal Packet
-				if(!$pk instanceof BatchPacket&&!$pk instanceof TextPacket&&!$pk instanceof MovePlayerPacket&&!$pk instanceof MoveActorAbsolutePacket&&!$pk instanceof SetTimePacket){
-					$name = str_replace("pocketmine\\network\\mcpe\\protocol\\", "", get_class($pk));
-					$this->getLogger()->info("? ".$name);
-					if(isset($this->isJoined[$event->getPlayer()->getName()])){
-						$event->getPlayer()->sendMessage("? ".$name);
-					}
-				}
+			if($event->getOrigin()->isConnected()&&isset($this->isJoined[$event->getOrigin()->getPlayer()?->getName()])){
+				$event->getOrigin()->getPlayer()->sendMessage("!! ".$name);
 			}
 		}
 	}
@@ -88,39 +72,15 @@ class PacketLogger extends PluginBase implements Listener{
 		if(!$this->send){
 			return;
 		}
-		if(!$event->getPacket() instanceof BatchPacket&&!$event->getPacket() instanceof TextPacket&&!$event->getPacket() instanceof MovePlayerPacket&&!$event->getPacket() instanceof MoveActorAbsolutePacket&&!$event->getPacket() instanceof SetTimePacket){
-			$name = str_replace("pocketmine\\network\\mcpe\\protocol\\", "", get_class($event->getPacket()));
-			$this->getLogger()->info("!!!! ".$name);
-			if(isset($this->isJoined[$event->getPlayer()->getName()])){
-				$event->getPlayer()->sendMessage("!!!! ".$name);
-			}
-		}
-
-		if(!$this->enableBatchPacketLogger){
-			return;
-		}
-
-		if($event->getPacket() instanceof BatchPacket){
-			$dataPacket = clone $event->getPacket();
-			$dataPacket->decode();
-			foreach($dataPacket->getPackets() as $buf){
-				$pk = PacketPool::getPacketById(ord($buf[0]));
-				if(!$pk->canBeBatched()){
-					continue;
-				}
-				$pk->setBuffer($buf, 1);
-				$pk->decode();
-				//Now handle $pk like a normal Packet
-
-				if(!$pk instanceof BatchPacket&&!$pk instanceof TextPacket&&!$pk instanceof MovePlayerPacket&&!$pk instanceof MoveActorAbsolutePacket&&!$pk instanceof SetTimePacket){
-					$name = str_replace("pocketmine\\network\\mcpe\\protocol\\", "", get_class($pk));
-					$this->getLogger()->info("?? ".$name);
-					if(isset($this->isJoined[$event->getPlayer()->getName()])){
-						$event->getPlayer()->sendMessage("?? ".$name);
+		foreach($event->getPackets() as $packet){
+			if(!$packet instanceof TextPacket&&!$packet instanceof MovePlayerPacket&&!$packet instanceof MoveActorAbsolutePacket&&!$packet instanceof SetTimePacket&&!$packet instanceof PlayerAuthInputPacket){
+				$name = str_replace("pocketmine\\network\\mcpe\\protocol\\", "", get_class($packet));
+				$this->getLogger()->info("!!!! ".$name);
+				foreach($event->getTargets() as $origin){
+					if($origin->isConnected()&&$origin->isConnected()&&isset($this->isJoined[$origin->getPlayer()?->getName()])){
+						$origin->getPlayer()->sendMessage("!!!! ".$name);
 					}
-
 				}
-
 			}
 		}
 	}
